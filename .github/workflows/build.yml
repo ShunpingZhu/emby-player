@@ -1,36 +1,31 @@
 name: Build Windows
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: 安装 Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: 安装依赖
+      - name: Install dependencies
         run: npm ci
 
-      - name: 编译
-        run: npm run build
+      - name: Build Windows
+        run: npm run build:win
 
-      - name: 打包 Windows 安装包
-        run: npx electron-builder --win --x64
-
-      - name: 上传产物
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Emby-Player-win32-x64
-          path: release/
+          name: Emby-Player-Windows
+          path: |
+            release/win-unpacked/*
+            release/*.exe
           retention-days: 7
