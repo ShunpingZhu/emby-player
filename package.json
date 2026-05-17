@@ -1,42 +1,31 @@
 {
   "name": "emby-player",
   "version": "1.0.0",
-  "description": "Emby Player - Electron-based media player",
-  "main": "./dist/main/index.js",
+  "description": "Emby Player based on Electron",
+  "main": "./out/main/index.js",
+  "author": "zhushunping",
+  "license": "MIT",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "package": "electron-builder --win --x64"
+    "postinstall": "electron-builder install-app-deps",
+    "build:win": "npm run build && electron-builder --win --config",
+    "build:mac": "npm run build && electron-builder --mac --config",
+    "build:linux": "npm run build && electron-builder --linux --config"
   },
   "dependencies": {
-    "electron-log": "^5.2.4",
-    "hls.js": "^1.5.19"
+    "electron-log": "^5.4.4",
+    "hls.js": "^1.5.15"
   },
   "devDependencies": {
-    "electron": "^33.2.1",
+    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/tsconfig": "^1.0.1",
+    "@electron-toolkit/utils": "^3.0.0",
+    "electron": "^33.0.0",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.0.0",
-    "typescript": "^5.7.2",
-    "vite": "^6.0.7"
-  },
-  "build": {
-    "appId": "com.emby.player",
-    "productName": "Emby Player",
-    "directories": {
-      "output": "release"
-    },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0"
   }
 }

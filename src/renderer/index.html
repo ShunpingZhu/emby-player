@@ -1,33 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:">
   <title>Emby Player</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #1e1e1e;
-      color: #ffffff;
-      overflow: hidden;
-    }
-    #app {
-      width: 100vw;
-      height: 100vh;
-    }
-  </style>
+  <link rel="stylesheet" href="./styles/main.css">
 </head>
 <body>
-  <div id="app">
-    <h1>Emby Player</h1>
-    <p>Loading...</p>
+  <!-- 登录页面（未登录时显示） -->
+  <div id="login-page" class="login-container">
+    <div class="login-box">
+      <h1 class="login-title">Emby Player 登录</h1>
+      <div class="form-group">
+        <input type="text" id="login-server" placeholder="服务器地址" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <input type="text" id="login-username" placeholder="用户名" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <input type="password" id="login-password" placeholder="密码" autocomplete="off">
+      </div>
+      <button id="btn-login">登录</button>
+      <div id="login-error" class="error-message"></div>
+    </div>
   </div>
-  <script type="module" src="./main.ts"></script>
+
+  <!-- 主应用容器（登录成功后显示） -->
+  <div id="app" class="app-container hidden">
+    <aside class="sidebar">
+      <div class="sidebar-logo">▶ Emby</div>
+      <nav class="nav-list">
+        <div class="nav-item" data-route="home">首页</div>
+        <div class="nav-item" data-route="movies">电影</div>
+        <div class="nav-item" data-route="tvshows">剧集</div>
+        <div class="nav-item" data-route="search">搜索</div>
+        <div class="nav-item" data-route="settings">设置</div>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <div id="page-home" class="page hidden"></div>
+      <div id="page-movies" class="page hidden"></div>
+      <div id="page-tvshows" class="page hidden"></div>
+      <div id="page-search" class="page hidden"></div>
+      <div id="page-detail" class="page hidden"></div>
+      <div id="page-settings" class="page hidden"></div>
+    </main>
+  </div>
+
+  <!-- 播放器覆盖层 -->
+  <div id="player-overlay">
+    <div id="player-top-bar">
+      <button id="btn-player-close">关闭</button>
+      <button id="btn-player-fullscreen">全屏</button>
+    </div>
+    <video id="player-video"></video>
+    <div id="player-controls">
+      <button id="btn-player-playpause">播放/暂停</button>
+      <div id="player-progress">
+        <div id="player-progress-bar"></div>
+      </div>
+      <span id="player-time">00:00 / 00:00</span>
+    </div>
+  </div>
+
+  <script type="module" src="./index.ts"></script>
 </body>
 </html>

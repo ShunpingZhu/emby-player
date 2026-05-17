@@ -2,10 +2,13 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import log from 'electron-log/main'
 
-// Initialize electron-log
+// Initialize electron-log for main process
 log.initialize()
 log.transports.file.level = 'info'
 log.transports.console.level = 'debug'
+
+// Log file location
+log.transports.file.resolvePathFn = () => join(app.getPath('userData'), 'logs', 'main.log')
 
 // Global exception handlers
 process.on('uncaughtException', (error) => {
@@ -25,10 +28,12 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 720,
-    minWidth: 800,
-    minHeight: 600,
+    resizable: false,
+    closable: true,
+    minimizable: true,
+    maximizable: true,
     frame: false,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#0f0f1a',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -67,10 +72,12 @@ function createWindow(): void {
 
 // Window control IPC handlers
 ipcMain.on('window:minimize', () => {
+  log.debug('IPC: window:minimize')
   mainWindow?.minimize()
 })
 
 ipcMain.on('window:maximize', () => {
+  log.debug('IPC: window:maximize')
   if (mainWindow?.isMaximized()) {
     mainWindow.unmaximize()
   } else {
@@ -79,6 +86,7 @@ ipcMain.on('window:maximize', () => {
 })
 
 ipcMain.on('window:close', () => {
+  log.debug('IPC: window:close')
   mainWindow?.close()
 })
 
@@ -86,27 +94,66 @@ ipcMain.handle('window:isMaximized', () => {
   return mainWindow?.isMaximized() ?? false
 })
 
-// Emby API request handler
-ipcMain.handle('emby:request', async (_event, options) => {
-  log.info('Emby request:', options.url)
+// App info IPC handler
+ipcMain.handle('app:version', () => {
+  return app.getVersion()
+})
+
+// Emby API request handler (proxy to avoid CORS)
+ipcMain.handle('emby:request', async (_event, options: { url: string; method?: string; headers?: Record<string, string>; body?: unknown }) => {
+  log.info(`Emby request: ${options.method || 'GET'} ${options.url}`)
+  
   try {
     const response = await fetch(options.url, {
       method: options.method || 'GET',
-      headers: options.headers
+      headers: options.headers,
+      body: options.body ? JSON.stringify(options.body) : undefined
     })
-    return {
-      ok: response.ok,
-      status: response.status,
-      data: await response.json()
+
+    const statusCode = response.status
+    log.debug(`Emby response status: ${statusCode}`)
+
+    // Check for error status codes
+    if (statusCode >= 400) {
+      const errorText = await response.text()
+      log.error(`Emby request failed with status ${statusCode}: ${errorText}`)
+      return {
+        success: false,
+        statusCode,
+        error: `HTTP ${statusCode}: ${errorText.substring(0, 200)}`
+      }
+    }
+
+    // Handle non-JSON responses (m3u8, text, etc.)
+    const contentType = response.headers.get('content-type') || ''
+    
+    if (contentType.includes('application/json')) {
+      const data = await response.json()
+      return {
+        success: true,
+        statusCode,
+        data
+      }
+    } else {
+      // Return text content for non-JSON responses (m3u8, etc.)
+      const text = await response.text()
+      return {
+        success: true,
+        statusCode,
+        data: text
+      }
     }
   } catch (error) {
     log.error('Emby request failed:', error)
-    throw error
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
   }
 })
 
 app.whenReady().then(() => {
-  log.info('App is ready')
+  log.info('App ready, version:', app.getVersion())
   createWindow()
 
   app.on('activate', () => {

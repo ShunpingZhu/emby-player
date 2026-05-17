@@ -1,114 +1,125 @@
-// Emby Player TypeScript Interfaces
+/**
+ * Emby API Shared TypeScript Types
+ * All data models for Emby media server integration
+ */
 
+/**
+ * Global window.electronAPI type declaration for renderer process
+ */
+export interface ElectronAPI {
+  embyRequest: (options: EmbyRequestOptions) => Promise<EmbyResponse>
+  window: {
+    minimize: () => Promise<void>
+    maximize: () => Promise<void>
+    close: () => Promise<void>
+    isMaximized: () => Promise<boolean>
+  }
+  getVersion: () => Promise<string>
+}
+
+declare global {
+  interface Window {
+    electronAPI: ElectronAPI
+  }
+}
+
+/**
+ * Authentication result from Emby login
+ */
 export interface AuthResult {
-  UserId: string
+  User: { Id: string; Name: string }
   AccessToken: string
   ServerId: string
 }
 
+/**
+ * Media library folder
+ */
 export interface MediaFolder {
-  Name: string
   Id: string
-  Type: string
-  CollectionType?: string
+  Name: string
+  CollectionType: 'movies' | 'tvshows' | 'music' | 'books' | 'photos' | ''
 }
 
+/**
+ * Base Emby media item
+ * Note: RunTimeTicks is in 100ns units. Convert to seconds: RunTimeTicks / 10_000_000
+ */
 export interface EmbyItem {
-  Name: string
   Id: string
-  Type: string
-  MediaType?: string
-  Overview?: string
-  Taglines?: string[]
- Genres?: string[]
-  CommunityRating?: number
-  OfficialRating?: string
+  ItemId?: string
+  Name: string
+  Type: 'Movie' | 'Series' | 'Episode' | 'Season' | 'Folder' | 'Book' | 'Photo' | 'Audio' | 'Playlist' | 'BoxSet'
   ProductionYear?: number
-  EndDate?: string
-  Status?: string
-  EpisodeCount?: number
-  SeasonCount?: number
-  ImageTags?: Record<string, string>
-  BackdropImageTags?: string[]
-  PrimaryImageAspectRatio?: number
-  ChildCount?: number
-  PremiereDate?: string
-  DateCreated?: string
-  Channels?: { UserData?: { UnplayedItemCount?: number; PlayedItemCount?: number } }[]
+  /** RunTimeTicks unit: 100ns (convert to seconds: / 10_000_000) */
+  RunTimeTicks?: number
+  Overview?: string
+  Genres?: string[]
+  Studios?: Array<{ Name: string }>
+  ImageTags?: { Primary?: string; Backdrop?: string; Thumb?: string }
+  Seasons?: Season[]
+  Episodes?: Episode[]
 }
 
+/**
+ * TV series season
+ */
 export interface Season {
-  Name: string
   Id: string
-  IndexNumber: number
-  SeriesId: string
-  SeriesName: string
-  Overview?: string
-  ImageTags?: Record<string, string>
-  PrimaryImageAspectRatio?: number
-  EpisodeCount?: number
+  Name: string
+  SeasonNumber: number
+  EpisodeCount: number
 }
 
+/**
+ * TV episode
+ */
 export interface Episode {
-  Name: string
   Id: string
-  Type: string
-  IndexNumber?: number
-  ParentIndexNumber?: number
+  Name: string
+  IndexNumber: number
+  SeasonId: string
+  /** RunTimeTicks unit: 100ns (convert to seconds: / 10_000_000) */
+  RunTimeTicks?: number
   Overview?: string
-  SeriesId?: string
-  SeasonId?: string
-  SeasonName?: string
-  CommunityRating?: number
-  ProductionYear?: number
-  PremiereDate?: string
-  ImageTags?: Record<string, string>
-  MediaSources?: MediaSource[]
 }
 
-export interface MediaSource {
-  Id: string
-  Protocol: string
-  Type: string
-  MediaStreams?: MediaStream[]
-  Container?: string
-  Path?: string
-  Size?: number
-}
-
-export interface MediaStream {
-  Codec: string
-  Type: string
-  Index: number
-  Profile?: string
-  Level?: number
-  Width?: number
-  Height?: number
-  BitRate?: number
-  Language?: string
-  Title?: string
-}
-
+/**
+ * Search hint result from Emby search
+ */
 export interface SearchHint {
+  ItemId: string
   Name: string
-  Id: string
   Type: string
-  MediaType?: string
+  ProductionYear?: number
   ThumbImageTag?: string
-  ParentId?: string
-  ParentName?: string
-  IsMedia?: boolean
 }
 
+/**
+ * HTTP request options for Emby API
+ */
 export interface EmbyRequestOptions {
   url: string
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
-  headers?: Record<string, string>
+  method: 'GET' | 'POST' | 'DELETE' | 'PUT'
+  headers: Record<string, string>
   body?: unknown
 }
 
-export interface EmbyResponse<T = unknown> {
-  ok: boolean
-  status: number
-  data: T
+/**
+ * Standardized API response wrapper
+ */
+export interface EmbyResponse {
+  success: boolean
+  data?: unknown
+  error?: string
+  statusCode?: number
+}
+
+/**
+ * Application global state
+ */
+export interface AppState {
+  serverUrl: string | null
+  accessToken: string | null
+  user: { id: string; name: string } | null
 }

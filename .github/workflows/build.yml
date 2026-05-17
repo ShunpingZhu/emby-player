@@ -1,4 +1,4 @@
-name: Build Windows x64
+name: Build
 
 on:
   push:
@@ -8,11 +8,20 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
-    
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-latest
+            platform: darwin
+          - os: windows-latest
+            platform: win32
+
+    runs-on: ${{ matrix.os }}
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -21,17 +30,29 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build application
+      - name: Build
         run: npm run build
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: true
 
-      - name: Package application
-        run: npm run package
+      - name: Build distribution
+        if: matrix.platform != 'darwin' || startsWith(matrix.platform, 'darwin')
+        run: |
+          if [ "${{ matrix.platform }}" = "win32" ]; then
+            npm run build:win
+          elif [ "${{ matrix.platform }}" = "darwin" ]; then
+            npm run build:mac
+          else
+            npm run build:linux
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: emby-player-win32-x64
-          path: release/**/*.exe
+          name: ${{ matrix.platform }}-build
+          path: |
+            release/*
+            out/*
           retention-days: 7

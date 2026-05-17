@@ -1,45 +1,19 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-export interface EmbyRequestOptions {
+interface EmbyRequestOptions {
   url: string
-  method?: string
-  headers?: Record<string, string>
+  method: 'GET' | 'POST' | 'DELETE' | 'PUT'
+  headers: Record<string, string>
+  body?: any
 }
 
-export interface EmbyResponse {
-  ok: boolean
-  status: number
-  data: unknown
-}
-
-export interface ElectronAPI {
-  emby: {
-    request: (options: EmbyRequestOptions) => Promise<EmbyResponse>
-  }
+contextBridge.exposeInMainWorld('electronAPI', {
+  embyRequest: (options: EmbyRequestOptions) => ipcRenderer.invoke('emby:request', options),
   window: {
-    minimize: () => void
-    maximize: () => void
-    close: () => void
-    isMaximized: () => Promise<boolean>
-    onMaximized: (callback: (isMaximized: boolean) => void) => () => void
-  }
-}
-
-const electronAPI: ElectronAPI = {
-  emby: {
-    request: (options: EmbyRequestOptions) => ipcRenderer.invoke('emby:request', options)
+    minimize: () => ipcRenderer.invoke('window:minimize'),
+    maximize: () => ipcRenderer.invoke('window:maximize'),
+    close: () => ipcRenderer.invoke('window:close'),
+    isMaximized: () => ipcRenderer.invoke('window:isMaximized')
   },
-  window: {
-    minimize: () => ipcRenderer.send('window:minimize'),
-    maximize: () => ipcRenderer.send('window:maximize'),
-    close: () => ipcRenderer.send('window:close'),
-    isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
-    onMaximized: (callback: (isMaximized: boolean) => void) => {
-      const handler = (_event: Electron.IpcRendererEvent, isMaximized: boolean) => callback(isMaximized)
-      ipcRenderer.on('window:maximized', handler)
-      return () => ipcRenderer.removeListener('window:maximized', handler)
-    }
-  }
-}
-
-contextBridge.exposeInMainWorld('electronAPI', electronAPI)
+  getVersion: () => ipcRenderer.invoke('app:version')
+})
