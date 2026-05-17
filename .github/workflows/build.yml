@@ -1,4 +1,4 @@
-name: Build
+name: Build Windows
 
 on:
   push:
@@ -8,17 +8,7 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            platform: linux
-          - os: macos-latest
-            platform: darwin
-          - os: windows-latest
-            platform: win32
-
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -34,25 +24,13 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: true
 
-      - name: Build distribution
-        if: matrix.platform != 'darwin' || startsWith(matrix.platform, 'darwin')
-        run: |
-          if [ "${{ matrix.platform }}" = "win32" ]; then
-            npm run build:win
-          elif [ "${{ matrix.platform }}" = "darwin" ]; then
-            npm run build:mac
-          else
-            npm run build:linux
-          fi
+      - name: Build Windows x64
+        run: npx electron-builder --win --x64
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-build
-          path: |
-            release/*
-            out/*
+          name: Emby-Player-win32-x64
+          path: release/
           retention-days: 7
